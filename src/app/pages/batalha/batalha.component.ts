@@ -1,7 +1,9 @@
 import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { CartaComponent } from '../carta/carta.component';
 import { CartaPokemon } from '../carta/carta.model';
+import { Baralho } from '../baralhos/baralho.model';
 import { UsuarioService } from '../../services/usuario.service';
 import cartasMock from '../../data/cartas-mock.json';
 
@@ -15,18 +17,25 @@ type EstadoAnimacao = 'neutro' | 'atacando-j1' | 'atacando-j2' | 'sofrendo-dano'
   imports: [RouterLink, CartaComponent],
   templateUrl: './batalha.component.html',
   styleUrl: './batalha.component.scss',
-  
 })
 export class BatalhaComponent implements OnInit, OnDestroy {
-  // Perfis
+  private http = inject(HttpClient);
   usuarioService = inject(UsuarioService);
-  
+
+  private readonly API_BARALHOS = 'http://localhost/joquemmon-api/baralhos.php';
+  private readonly API_CARTAS = 'http://localhost/joquemmon-api/cartas.php';
+  readonly XP_VITORIA = 50;
+
   fotoJogador1 = this.usuarioService.fotoTreinador();
   fotoJogador2 = 'images/perfil/rival_default.jpg';
 
   // Mãos (Signals para atualizar barra de vida e contagem em tempo real)
   maoJogador1 = signal<CartaPokemon[]>([]);
   maoJogador2 = signal<CartaPokemon[]>([]);
+
+  // Total inicial de cartas de cada lado (para proporção correta da barra de vida)
+  totalCartasInicialJ1 = signal<number>(4);
+  totalCartasInicialJ2 = signal<number>(4);
 
   // Cartas no campo (Signals com imutabilidade para atualizar o PV dentro do <app-carta>)
   cartaCampoJogador1 = signal<CartaPokemon | null>(null);
@@ -44,7 +53,7 @@ export class BatalhaComponent implements OnInit, OnDestroy {
   animacaoSlot2 = signal<EstadoAnimacao>('neutro');
 
   // Caixa de descrição
-  logBatalha = signal<string>('Fase de Preparação: Selecione uma carta da sua mão e clique em Confirmar.');
+  logBatalha = signal<string>('Carregando seu baralho para o duelo...');
 
   // Vida total de cada jogador (cartas na mão + carta ativa em campo)
   vidaJogador1 = computed(() => this.maoJogador1().length + (this.cartaCampoJogador1() ? 1 : 0));
@@ -63,24 +72,79 @@ export class BatalhaComponent implements OnInit, OnDestroy {
   private intervaloTimer: ReturnType<typeof setInterval> | null = null;
 
   ngOnInit() {
-    const gerarBaralho = (): CartaPokemon[] => {
-      const lista = [...cartasMock, ...cartasMock].slice(0, 4);
-      return lista.map((c) => ({ ...c }));
-    };
-
-
     if (!this.usuarioService.perfil()) {
       this.usuarioService.carregarPerfil().subscribe();
     }
 
-    this.maoJogador1.set(gerarBaralho());
-    this.maoJogador2.set(gerarBaralho());
-
-    this.reiniciarTemporizador();
+    this.carregarDecksParaBatalha();
   }
 
   ngOnDestroy() {
     this.pararTemporizador();
+  }
+
+  private carregarDecksParaBatalha() {
+    const usuarioId = this.usuarioService.usuarioId;
+
+    // 1. Busca os baralhos reais do jogador no MySQL
+    this.http
+      .get<Baralho[]>(`${this.API_BARALHOS}?usuario_id=${usuarioId}`)
+      .subscribe({
+        next: (baralhos) => {
+          const baralhoValido = (baralhos ?? []).find((b) => b.cartas && b.cartas.length > 0);
+
+          if (baralhoValido) {
+            const deckJ1 = baralhoValido.cartas.slice(0, 4).map((c) => ({ ...c }));
+            this.maoJogador1.set(deckJ1);
+            this.totalCartasInicialJ1.set(deckJ1.length);
+            this.logBatalha.set(
+              `Baralho "${baralhoValido.nome}" carregado! Selecione uma carta da sua mão e clique em Confirmar.`
+            );
+          } else {
+            this.aplicarFallbackDeckJogador();
+          }
+
+          this.carregarDeckRival(usuarioId);
+        },
+        error: () => {
+          this.aplicarFallbackDeckJogador();
+          this.carregarDeckRival(usuarioId);
+        },
+      });
+  }
+
+  private aplicarFallbackDeckJogador() {
+    const lista = [...cartasMock, ...cartasMock].slice(0, 4).map((c) => ({ ...c }));
+    this.maoJogador1.set(lista);
+    this.totalCartasInicialJ1.set(lista.length);
+    this.logBatalha.set('Fase de Preparação: Selecione uma carta da sua mão e clique em Confirmar.');
+  }
+
+  private carregarDeckRival(usuarioId: number) {
+    // 2. Busca cartas reais do banco para montar a mão do Rival
+    this.http
+      .get<CartaPokemon[]>(`${this.API_CARTAS}?usuario_id=${usuarioId}`)
+      .subscribe({
+        next: (cartasBanco) => {
+          const base = cartasBanco && cartasBanco.length > 0 ? cartasBanco : cartasMock;
+          const pool = [...base, ...base, ...base, ...base];
+          // Embaralha e pega 4 cartas para o Rival
+          const embaralhadas = pool
+            .sort(() => Math.random() - 0.5)
+            .slice(0, 4)
+            .map((c) => ({ ...c }));
+
+          this.maoJogador2.set(embaralhadas);
+          this.totalCartasInicialJ2.set(embaralhadas.length);
+          this.reiniciarTemporizador();
+        },
+        error: () => {
+          const lista = [...cartasMock, ...cartasMock].slice(0, 4).map((c) => ({ ...c }));
+          this.maoJogador2.set(lista);
+          this.totalCartasInicialJ2.set(lista.length);
+          this.reiniciarTemporizador();
+        },
+      });
   }
 
   // =========================================================
@@ -224,10 +288,8 @@ export class BatalhaComponent implements OnInit, OnDestroy {
       const dano = c1[a1];
       const novoPv = Math.max(0, c2.pv - dano);
 
-      // Atualiza o Signal com novo objeto para o <app-carta> re-renderizar o PV imediatamente
       this.cartaCampoJogador2.set({ ...c2, pv: novoPv });
 
-      // Passo 1: Jogador 1 avança e Jogador 2 balança tomando dano
       this.animacaoSlot1.set('atacando-j1');
       this.animacaoSlot2.set('sofrendo-dano');
       this.logBatalha.set(`Você escolheu ${nomeAcao[a1]} (${dano}) e acertou ${c2.nome}!`);
@@ -243,10 +305,8 @@ export class BatalhaComponent implements OnInit, OnDestroy {
       const dano = c2[a2];
       const novoPv = Math.max(0, c1.pv - dano);
 
-      // Atualiza o Signal com novo objeto para o <app-carta> re-renderizar o PV imediatamente
       this.cartaCampoJogador1.set({ ...c1, pv: novoPv });
 
-      // Passo 1: Jogador 2 avança e Jogador 1 balança tomando dano
       this.animacaoSlot2.set('atacando-j2');
       this.animacaoSlot1.set('sofrendo-dano');
       this.logBatalha.set(`Rival escolheu ${nomeAcao[a2]} (${dano}) e acertou seu ${c1.nome}!`);
@@ -262,14 +322,11 @@ export class BatalhaComponent implements OnInit, OnDestroy {
   }
 
   private executarPosImpacto(j1Morreu: boolean, j2Morreu: boolean, atualizarTextoFinal: () => void) {
-    // Aguarda 750ms para a investida e o balanço de dano terminarem totalmente
     setTimeout(() => {
-      // Passo 2: Dispara a animação de morte se o PV zerou
       this.animacaoSlot1.set(j1Morreu ? 'derrotada' : 'neutro');
       this.animacaoSlot2.set(j2Morreu ? 'derrotada' : 'neutro');
       atualizarTextoFinal();
 
-      // Aguarda a animação de queda (650ms) antes de liberar o botão Continuar
       if (j1Morreu || j2Morreu) {
         setTimeout(() => {
           this.faseAtual.set('RESULTADO_RODADA');
@@ -311,7 +368,8 @@ export class BatalhaComponent implements OnInit, OnDestroy {
     if (this.vidaJogador2() === 0) {
       this.faseAtual.set('FIM_DE_JOGO');
       this.pararTemporizador();
-      this.logBatalha.set('Vitória! Você derrotou todas as cartas do Rival!');
+      this.usuarioService.adicionarXp(this.XP_VITORIA).subscribe();
+      this.logBatalha.set(`Vitória! Você derrotou todas as cartas do Rival e ganhou +${this.XP_VITORIA} XP!`);
       return;
     }
 

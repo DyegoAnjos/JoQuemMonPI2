@@ -13,6 +13,7 @@ export const routes: Routes = [
   { path: 'cadastro', component: CadastroComponent }, 
   { path: 'home', component: HomeComponent },
   { path: 'batalha', component: BatalhaComponent },
-  { path: 'inventario', component: InventarioComponent }, 
+  { path: 'inventario', component: InventarioComponent },
+  { path: 'baralhos', loadComponent: () => import('./pages/baralhos/baralhos.component').then(m => m.BaralhosComponent) }, 
   { path: 'perfil', component: PerfilComponent }, 
 ];

@@ -1,0 +1,266 @@
+<div class="baralhos-page">
+  <!-- HEADER: Voltar para o Inventário | Título | Criar Novo Baralho -->
+  <header class="topo-baralhos">
+    <button routerLink="/inventario" class="btn-voltar">
+      ← Voltar ao Inventário
+    </button>
+
+    <h1>Meus Baralhos</h1>
+
+    <button type="button" class="btn-criar" (click)="abrirModalCriar()">
+      + Criar Novo Baralho
+    </button>
+  </header>
+
+  <!-- STATUS DE BARALHO SALVO / ALTERADO / EXCLUÍDO -->
+  @if (mensagemStatus()) {
+    <div class="toast-sucesso">
+      ✔ {{ mensagemStatus() }}
+    </div>
+  }
+
+  <!-- CONTEÚDO: Grade de Baralhos -->
+  <main class="conteudo-baralhos">
+    @if (carregando()) {
+      <div class="estado-vazio">
+        <p>Carregando seus baralhos...</p>
+      </div>
+    } @else if (baralhos().length === 0) {
+      <div class="estado-vazio">
+        <p>Você ainda não possui nenhum baralho montado.</p>
+        <button type="button" class="btn-criar" (click)="abrirModalCriar()">
+          Criar meu primeiro baralho
+        </button>
+      </div>
+    } @else {
+      <div class="grid-baralhos">
+        @for (baralho of baralhos(); track baralho.id) {
+          <div class="card-baralho">
+            <!-- Capa com até 8 miniaturas das cartas do baralho -->
+            <div class="capa-baralho">
+              @if (baralho.cartas.length > 0) {
+                <div class="miniaturas-pokemon">
+                  @for (carta of baralho.cartas; track $index) {
+                    <img [src]="carta.imagem" [alt]="carta.nome" [title]="carta.nome">
+                  }
+                </div>
+              } @else {
+                <span class="sem-cartas">Baralho vazio</span>
+              }
+            </div>
+
+            <!-- Informações do Baralho -->
+            <div class="info-baralho">
+              <div class="titulo-e-contagem">
+                <h2>{{ baralho.nome }}</h2>
+                <span
+                  class="badge-contagem"
+                  [class.completo]="baralho.cartas.length === MAX_CARTAS_BARALHO"
+                  [class.incompleto]="baralho.cartas.length < MAX_CARTAS_BARALHO">
+                  {{ baralho.cartas.length }} / {{ MAX_CARTAS_BARALHO }} cartas
+                </span>
+              </div>
+
+              <!-- Passo 4: Botão Editar baralho -->
+              <div class="acoes-baralho">
+                <button
+                  type="button"
+                  class="btn-editar"
+                  (click)="abrirModalEditar(baralho)">
+                  Editar baralho
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </main>
+
+  <!-- POP-UP (MODAL) DE CRIAR OU EDITAR BARALHO -->
+  @if (modalAberto()) {
+    <div class="modal-overlay" (click)="fecharModal()">
+      <div class="modal-box" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>{{ modoModal() === 'CRIAR' ? 'Criar Novo Baralho' : 'Editar Baralho' }}</h2>
+          <button type="button" class="btn-fechar-modal" (click)="fecharModal()">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <!-- Nome do Baralho -->
+          <div class="campo-nome">
+            <label for="nomeBaralho">Nome do Baralho</label>
+            <input
+              id="nomeBaralho"
+              type="text"
+              placeholder="Ex: Time Elétrico, Deck Ofensivo..."
+              [ngModel]="nomeBaralhoForm()"
+              (ngModelChange)="nomeBaralhoForm.set($event)"
+              maxlength="30">
+          </div>
+
+          <!-- MODO EDIÇÃO: Opções "Remover cartas" e "Adicionar mais cartas" -->
+          @if (modoModal() === 'EDITAR') {
+            <div class="abas-edicao">
+              <button
+                type="button"
+                class="btn-aba"
+                [class.ativa]="abaEdicao() === 'REMOVER'"
+                (click)="abaEdicao.set('REMOVER')">
+                Remover cartas ({{ cartasSelecionadas().length }}/{{ MAX_CARTAS_BARALHO }})
+              </button>
+
+              <button
+                type="button"
+                class="btn-aba"
+                [class.ativa]="abaEdicao() === 'ADICIONAR'"
+                (click)="abaEdicao.set('ADICIONAR')">
+                + Adicionar mais cartas
+              </button>
+            </div>
+
+            <!-- Aba 1: Remover cartas do baralho -->
+            @if (abaEdicao() === 'REMOVER') {
+              <div class="secao-selecionadas">
+                <span class="titulo-secao">Selecione as cartas que deseja remover do baralho:</span>
+
+                <div class="lista-cartas-disponiveis">
+                  @for (cartaSel of cartasSelecionadas(); track $index) {
+                    <button
+                      type="button"
+                      class="item-carta-disponivel item-remover"
+                      (click)="removerCartaDoBaralho($index)">
+                      <img [src]="cartaSel.imagem" [alt]="cartaSel.nome">
+                      <div class="detalhes-mini">
+                        <strong>{{ cartaSel.nome }}</strong>
+                        <small>PV: {{ cartaSel.pv }} | ATQ: {{ cartaSel.atq }} | DEF: {{ cartaSel.def }} | VEL: {{ cartaSel.vel }}</small>
+                      </div>
+                      <span class="icone-remover">Remover</span>
+                    </button>
+                  }
+
+                  @if (cartasSelecionadas().length === 0) {
+                    <p class="aviso-slots">Nenhuma carta no baralho. Clique em "+ Adicionar mais cartas".</p>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- Aba 2: Adicionar mais cartas do inventário -->
+            @if (abaEdicao() === 'ADICIONAR') {
+              <div class="secao-inventario-modal">
+                <div class="titulo-secao">
+                  <span>Seu Inventário (clique para adicionar)</span>
+                  <span class="contador" [class.cheio]="cartasSelecionadas().length === MAX_CARTAS_BARALHO">
+                    {{ cartasSelecionadas().length }} / {{ MAX_CARTAS_BARALHO }}
+                  </span>
+                </div>
+
+                <div class="lista-cartas-disponiveis">
+                  @for (carta of cartasInventario(); track carta.id) {
+                    <button
+                      type="button"
+                      class="item-carta-disponivel"
+                      [disabled]="cartasSelecionadas().length >= MAX_CARTAS_BARALHO"
+                      (click)="adicionarCartaAoBaralho(carta)">
+                      <img [src]="carta.imagem" [alt]="carta.nome">
+                      <div class="detalhes-mini">
+                        <strong>{{ carta.nome }}</strong>
+                        <small>PV: {{ carta.pv }} | ATQ: {{ carta.atq }} | DEF: {{ carta.def }} | VEL: {{ carta.vel }}</small>
+                      </div>
+                      <span class="icone-add">+</span>
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+          }
+
+          <!-- MODO CRIAÇÃO: Slots selecionados + Inventário abaixo -->
+          @if (modoModal() === 'CRIAR') {
+            <div class="secao-selecionadas">
+              <div class="titulo-secao">
+                <span>Cartas no Baralho</span>
+                <span class="contador" [class.cheio]="cartasSelecionadas().length === MAX_CARTAS_BARALHO">
+                  {{ cartasSelecionadas().length }} / {{ MAX_CARTAS_BARALHO }}
+                </span>
+              </div>
+
+              <div class="slots-baralho">
+                @for (cartaSel of cartasSelecionadas(); track $index) {
+                  <div
+                    class="slot-preenchido"
+                    (click)="removerCartaDoBaralho($index)"
+                    title="Clique para remover {{ cartaSel.nome }}">
+                    <img [src]="cartaSel.imagem" [alt]="cartaSel.nome">
+                    <span class="nome-mini">{{ cartaSel.nome }}</span>
+                    <span class="badge-remover">✕</span>
+                  </div>
+                }
+
+                @if (cartasSelecionadas().length === 0) {
+                  <p class="aviso-slots">Clique nas cartas do inventário abaixo para adicioná-las.</p>
+                }
+              </div>
+            </div>
+
+            <div class="secao-inventario-modal">
+              <span class="titulo-secao">Seu Inventário (clique para adicionar)</span>
+
+              <div class="lista-cartas-disponiveis">
+                @for (carta of cartasInventario(); track carta.id) {
+                  <button
+                    type="button"
+                    class="item-carta-disponivel"
+                    [disabled]="cartasSelecionadas().length >= MAX_CARTAS_BARALHO"
+                    (click)="adicionarCartaAoBaralho(carta)">
+                    <img [src]="carta.imagem" [alt]="carta.nome">
+                    <div class="detalhes-mini">
+                      <strong>{{ carta.nome }}</strong>
+                      <small>PV: {{ carta.pv }} | ATQ: {{ carta.atq }} | DEF: {{ carta.def }} | VEL: {{ carta.vel }}</small>
+                    </div>
+                    <span class="icone-add">+</span>
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
+          @if (erroFormulario()) {
+            <div class="alerta-erro">{{ erroFormulario() }}</div>
+          }
+        </div>
+
+        <!-- Rodapé do Modal: Excluir (apenas na edição) | Cancelar | Salvar baralho -->
+        <div class="modal-footer" [class.com-excluir]="modoModal() === 'EDITAR'">
+          @if (modoModal() === 'EDITAR') {
+            <button
+              type="button"
+              class="btn-excluir-modal"
+              [disabled]="salvando()"
+              (click)="excluirBaralhoAtual()">
+              Excluir baralho
+            </button>
+          }
+
+          <div class="acoes-direita-modal">
+            <button
+              type="button"
+              class="btn-cancelar"
+              [disabled]="salvando()"
+              (click)="fecharModal()">
+              Cancelar
+            </button>
+            <button
+              type="button"
+              class="btn-salvar"
+              [disabled]="salvando()"
+              (click)="salvarBaralho()">
+              {{ salvando() ? 'Salvando...' : 'Salvar baralho' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

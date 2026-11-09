@@ -1,0 +1,96 @@
+<div class="perfil-page">
+  <header class="topo-navegacao">
+    <button routerLink="/home" class="btn-voltar">← Voltar ao Menu</button>
+    <h1>Perfil do Treinador</h1>
+    <div class="espacador"></div>
+  </header>
+
+  <main class="conteudo-perfil">
+    <div class="card-perfil">
+      @if (mensagemSucesso()) {
+        <div class="alerta-sucesso">{{ mensagemSucesso() }}</div>
+      }
+
+      <!-- MODO VISUALIZAÇÃO -->
+      @if (!editando()) {
+        <div class="visualizacao-container">
+          <div class="avatar-wrapper">
+            <img [src]="perfil().foto" [alt]="perfil().nome" class="foto-perfil">
+            <span class="badge-nivel">Nível {{ nivelAtual() }}</span>
+          </div>
+
+          <h2 class="nome-usuario">{{ perfil().nome }}</h2>
+
+          <div class="box-xp">
+            <div class="xp-header">
+              <span>Experiência (XP)</span>
+              <strong>{{ perfil().xp }} XP</strong>
+            </div>
+
+            <div class="barra-xp-fundo" title="{{ xpProgressoNivel() }}/100 XP para o próximo nível">
+              <div class="barra-xp-preenchimento" [style.width.%]="xpProgressoNivel()"></div>
+            </div>
+
+            <small class="xp-restante">
+              Faltam {{ 100 - xpProgressoNivel() }} XP para o Nível {{ nivelAtual() + 1 }}
+            </small>
+          </div>
+
+          <button type="button" class="btn-primario" (click)="iniciarEdicao()">
+            Editar Perfil
+          </button>
+        </div>
+      }
+
+      <!-- MODO EDIÇÃO -->
+      @if (editando()) {
+        <form [formGroup]="formPerfil" (ngSubmit)="salvarPerfil()" class="form-edicao">
+          <h2>Editar Informações</h2>
+
+          <div class="campo-foto-edicao">
+            <img [src]="formPerfil.controls.foto.value" alt="Prévia do Avatar" class="foto-preview">
+
+            <div class="opcoes-foto">
+              <label class="btn-upload">
+                Carregar imagem do PC
+                <input type="file" accept="image/*" (change)="aoSelecionarArquivoFoto($event)" hidden>
+              </label>
+
+              <p class="label-presets">Ou escolha um avatar:</p>
+              <div class="lista-presets">
+                @for (avatar of avataresDisponiveis; track avatar) {
+                  <button
+                    type="button"
+                    class="btn-preset"
+                    [class.ativo]="formPerfil.controls.foto.value === avatar"
+                    (click)="selecionarAvatarPreset(avatar)">
+                    <img [src]="avatar" alt="Avatar opção">
+                  </button>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Campo Nome -->
+          <div class="campo-grupo">
+            <label for="nome">Nome do Treinador</label>
+            <input id="nome" type="text" formControlName="nome" placeholder="Digite seu nome">
+            @if (formPerfil.controls.nome.invalid && formPerfil.controls.nome.touched) {
+              <span class="erro-validacao">O nome deve ter entre 3 e 25 caracteres.</span>
+            }
+          </div>
+
+          <!-- Botões de Ação -->
+          <div class="acoes-form">
+            <button type="button" class="btn-secundario" (click)="cancelarEdicao()">
+              Cancelar
+            </button>
+            <button type="submit" class="btn-primario" [disabled]="formPerfil.invalid">
+              Salvar Alterações
+            </button>
+          </div>
+        </form>
+      }
+    </div>
+  </main>
+</div>

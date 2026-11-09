@@ -1,0 +1,82 @@
+.inventario-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #f0f2f5;
+  padding: 1.5rem 2rem;
+  gap: 1.5rem;
+  box-sizing: border-box;
+}
+
+
+.header-inventario {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #ffffff;
+  padding: 1rem 1.5rem;
+  border-radius: 0.75rem;
+  border-top: 5px solid #3b4cca;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+  h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #2b2b2b;
+  }
+}
+
+.btn-nav {
+  padding: 0.65rem 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #ffffff;
+  border: none;
+  border-radius: 0.4rem;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.15s;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+}
+
+.btn-voltar {
+  background-color: #555555;
+
+  &:hover {
+    background-color: #3b3b3b;
+  }
+}
+
+.btn-baralhos {
+  background-color: #e3350d;
+
+  &:hover {
+    background-color: #c12a08;
+  }
+}
+
+
+.box-cartas {
+  flex: 1;
+  background-color: #ffffff;
+  border-radius: 0.75rem;
+  padding: 2rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.grid-cartas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  justify-content: center;
+}
+
+.carta-placeholder {
+  width: 15rem;
+  height: 25rem;
+  background-color: #121212;
+  border-radius: 1rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}

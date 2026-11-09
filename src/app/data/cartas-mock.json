@@ -1,0 +1,34 @@
+[
+  {
+    "id": 509,
+    "nome": "Chandelure",
+    "pv": 4,
+    "imagem": "images/pokemon/chandelure.png",
+    "tipo1": "Fantasma",
+    "tipo2": "Fogo",
+    "atq": 7,
+    "def": 5,
+    "vel": 4
+  },
+  {
+    "id": 25,
+    "nome": "Pikachu",
+    "pv": 3,
+    "imagem": "images/pokemon/pikachu.png",
+    "tipo1": "Elétrico",
+    "atq": 6,
+    "def": 3,
+    "vel": 9
+  },
+  {
+    "id": 6,
+    "nome": "Charizard",
+    "pv": 6,
+    "imagem": "images/pokemon/charizard.png",
+    "tipo1": "Fogo",
+    "tipo2": "Voador",
+    "atq": 8,
+    "def": 5,
+    "vel": 7
+  }
+]

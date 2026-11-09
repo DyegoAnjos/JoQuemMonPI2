@@ -1,0 +1,23 @@
+<div class="inventario-container">
+  
+  <header class="header-inventario">
+    <button routerLink="/home" class="btn-nav btn-voltar">
+      ← Voltar
+    </button>
+
+    <h1>Meu Inventário</h1>
+
+    <button routerLink="/baralhos" class="btn-nav btn-baralhos">
+      Baralhos
+    </button>
+  </header>
+
+  
+  <main class="box-cartas">
+    <div class="grid-cartas">
+      @for (item of minhasCartas; track $index) {
+        <app-carta [carta]="item" [interativo]="true"></app-carta>
+      }
+    </div>
+  </main>
+</div>

@@ -1,0 +1,47 @@
+<div class="carta">
+  <!-- Topo: ID na esquerda | Vida + PV na direita -->
+  <div class="header">
+    <div class="idPokemon">
+      <p>#{{ carta.id }}</p>
+    </div>
+
+    <div class="pv">
+      <p class="valorPV">{{ carta.pv }}</p>
+      <p class="texto">PV</p>
+    </div>
+  </div>
+
+  <!-- Imagem central -->
+  <div class="boxImagemPokemon">
+    <img class="imagemPokemon" [src]="carta.imagem" [alt]="carta.nome">
+  </div>
+
+  <!-- Corpo: Nome, Tipos e os 3 botões de status -->
+  <div class="main">
+    <p class="nomePokemon">{{ carta.nome }}</p>
+
+    <div class="tipos">
+      <span class="tipo-badge">{{ carta.tipo1 }}</span>
+      @if (carta.tipo2) {
+        <span class="tipo-badge">{{ carta.tipo2 }}</span>
+      }
+    </div>
+
+    <div class="status">
+      <button type="button" class="btn-atributo" [disabled]="!interativo" (click)="selecionarAtributo('atq', carta.atq)">
+        <span>ATQ:</span>
+        <strong>{{ carta.atq }}</strong>
+      </button>
+
+      <button type="button" class="btn-atributo" [disabled]="!interativo" (click)="selecionarAtributo('def', carta.def)">
+        <span>DEF:</span>
+        <strong>{{ carta.def }}</strong>
+      </button>
+
+      <button type="button" class="btn-atributo" [disabled]="!interativo" (click)="selecionarAtributo('vel', carta.vel)">
+        <span>VEL:</span>
+        <strong>{{ carta.vel }}</strong>
+      </button>
+    </div>
+  </div>
+</div>

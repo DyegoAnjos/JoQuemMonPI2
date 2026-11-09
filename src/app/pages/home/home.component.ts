@@ -10,5 +10,5 @@ import { RouterLink } from '@angular/router';
 })
 export class HomeComponent {
   // Caminho da foto de perfil (pode ser substituído dinamicamente pelos dados do usuário logado depois)
-  fotoPerfil = 'images/perfil/treinador_default.png';
+  fotoPerfil = 'images/perfil/treinador_default.jpg';
 }

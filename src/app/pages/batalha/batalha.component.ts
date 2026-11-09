@@ -17,8 +17,8 @@ type EstadoAnimacao = 'neutro' | 'atacando-j1' | 'atacando-j2' | 'sofrendo-dano'
 })
 export class BatalhaComponent implements OnInit, OnDestroy {
   // Perfis
-  fotoJogador1 = 'images/perfil/treinador_default.png';
-  fotoJogador2 = 'images/perfil/rival_default.png';
+  fotoJogador1 = 'images/perfil/treinador_default.jpg';
+  fotoJogador2 = 'images/perfil/rival_default.jpg';
 
   // Mãos (Signals para atualizar barra de vida e contagem em tempo real)
   maoJogador1 = signal<CartaPokemon[]>([]);

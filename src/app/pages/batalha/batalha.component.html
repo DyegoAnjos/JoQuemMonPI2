@@ -1,0 +1,147 @@
+<div class="arena-container">
+  <!-- CAMPO 1 (TOPO): JOGADOR 2 (INIMIGO) -->
+  <header class="zona-jogador zona-inimigo">
+    <div class="perfil-status">
+      <div class="avatar avatar-inimigo">
+        <img [src]="fotoJogador2" alt="Oponente">
+      </div>
+      <div class="info-vida">
+        <span class="nome-treinador">Rival</span>
+        <div class="barra-vida-container" title="Cartas restantes: {{ vidaJogador2() }}/4">
+          <div class="barra-vida-preenchimento" [style.width.%]="(vidaJogador2() / 4) * 100"></div>
+        </div>
+        <span class="texto-vida">{{ vidaJogador2() }} / 4 Cartas</span>
+      </div>
+    </div>
+
+    <div class="mao-cartas mao-inimigo">
+      @for (carta of maoJogador2(); track $index) {
+        <div class="carta-verso" title="Carta oculta do oponente">
+          <span>JoQuemMon</span>
+        </div>
+      }
+    </div>
+
+    <div class="controles-partida">
+      <div class="temporizador" [class.tempo-critico]="tempoRestante() <= 30">
+        ⏱ {{ tempoFormatado() }}
+      </div>
+      <button routerLink="/home" class="btn-abandonar">
+        Abandonar duelo
+      </button>
+    </div>
+  </header>
+
+  <!-- CAMPO 2 (CENTRO): CAMPO DE BATALHA -->
+  <main class="campo-batalha">
+    <div class="duelo-slots">
+      <!-- Slot da Carta do Jogador 1 -->
+      <div class="slot-carta" [class]="animacaoSlot1()">
+        @if (cartaCampoJogador1(); as cartaJ1) {
+          <app-carta
+            [carta]="cartaJ1"
+            [interativo]="faseAtual() === 'ESCOLHER_ACAO'"
+            (atributoSelecionado)="aoEscolherAtributo($event)">
+          </app-carta>
+        } @else if (indexCartaPreSelecionada() !== null) {
+          <div class="carta-pre-selecionada">
+            <app-carta [carta]="maoJogador1()[indexCartaPreSelecionada()!]" [interativo]="false"></app-carta>
+          </div>
+        } @else {
+          <div class="slot-vazio">Sua Carta</div>
+        }
+      </div>
+
+      <!-- Centro: Badge VS e Botão de Confirmar Turno -->
+      <div class="centro-acoes">
+        <div class="vs-badge">VS</div>
+
+        @if (faseAtual() === 'ESCOLHER_CARTA') {
+          <button
+            type="button"
+            class="btn-confirmar"
+            [disabled]="indexCartaPreSelecionada() === null"
+            (click)="confirmarEscolhaCarta()">
+            Confirmar Carta
+          </button>
+        }
+
+        @if (faseAtual() === 'ESCOLHER_ACAO') {
+          <div class="indicador-escolha">
+            Ação: <strong>{{ acaoSelecionadaJ1() ? acaoSelecionadaJ1()!.toUpperCase() : 'Nenhuma' }}</strong>
+          </div>
+          <button
+            type="button"
+            class="btn-confirmar"
+            [disabled]="!acaoSelecionadaJ1()"
+            (click)="confirmarEscolhaAcao()">
+            Confirmar Ação
+          </button>
+        }
+
+        @if (faseAtual() === 'RESULTADO_RODADA') {
+          <button
+            type="button"
+            class="btn-confirmar btn-continuar"
+            (click)="avancarAposRodada()">
+            Continuar
+          </button>
+        }
+
+        @if (faseAtual() === 'FIM_DE_JOGO') {
+          <button routerLink="/home" class="btn-confirmar btn-sair">
+            Voltar ao Menu
+          </button>
+        }
+      </div>
+
+      <!-- Slot da Carta do Jogador 2 -->
+      <div class="slot-carta" [class]="animacaoSlot2()">
+        @if (cartaCampoJogador2() && cartaRivalRevelada()) {
+          <app-carta [carta]="cartaCampoJogador2()!" [interativo]="false"></app-carta>
+        } @else if (cartaCampoJogador2() && !cartaRivalRevelada()) {
+          <div class="carta-verso-grande">
+            <span>JoQuemMon</span>
+          </div>
+        } @else {
+          <div class="slot-vazio">Carta Rival</div>
+        }
+      </div>
+    </div>
+
+    <!-- Caixa de Descrição dos Acontecimentos -->
+    <div class="caixa-descricao">
+      <p>{{ logBatalha() }}</p>
+    </div>
+  </main>
+
+  <!-- CAMPO 3 (BASE): JOGADOR 1 (VOCÊ) -->
+  <footer class="zona-jogador zona-usuario">
+    <div class="espacador-lateral"></div>
+
+    <div class="mao-cartas mao-usuario">
+      @for (carta of maoJogador1(); track $index) {
+        <div
+          class="carta-na-mao"
+          [class.selecionada]="indexCartaPreSelecionada() === $index"
+          [class.bloqueada]="faseAtual() !== 'ESCOLHER_CARTA'"
+          (click)="selecionarCartaDaMao($index)">
+          <app-carta [carta]="carta" [interativo]="false"></app-carta>
+        </div>
+      }
+    </div>
+
+    <div class="perfil-status perfil-direita">
+      <div class="info-vida alinhar-direita">
+        <span class="nome-treinador">Você</span>
+        <div class="barra-vida-container" title="Cartas restantes: {{ vidaJogador1() }}/4">
+          <div class="barra-vida-preenchimento" [style.width.%]="(vidaJogador1() / 4) * 100"></div>
+        </div>
+        <span class="texto-vida">{{ vidaJogador1() }} / 4 Cartas</span>
+      </div>
+      <div class="avatar avatar-usuario">
+        <img [src]="fotoJogador1" alt="Seu Perfil">
+      </div>
+    </div>
+  </footer>
+</div>

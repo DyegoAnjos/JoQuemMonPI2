@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { UsuarioService } from '../../services/usuario.service';
 
 @Component({
   selector: 'app-home',
@@ -8,7 +9,12 @@ import { RouterLink } from '@angular/router';
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
 })
-export class HomeComponent {
-  // Caminho da foto de perfil (pode ser substituído dinamicamente pelos dados do usuário logado depois)
-  fotoPerfil = 'images/perfil/treinador_default.jpg';
+export class HomeComponent implements OnInit {
+  usuarioService = inject(UsuarioService);
+
+  ngOnInit() {
+    if (!this.usuarioService.perfil()) {
+      this.usuarioService.carregarPerfil().subscribe();
+    }
+  }
 }

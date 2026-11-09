@@ -140,7 +140,7 @@
         <span class="texto-vida">{{ vidaJogador1() }} / 4 Cartas</span>
       </div>
       <div class="avatar avatar-usuario">
-        <img [src]="fotoJogador1" alt="Seu Perfil">
+        <img [src]="usuarioService.fotoTreinador()" [alt]="usuarioService.nomeTreinador()">
       </div>
     </div>
   </footer>

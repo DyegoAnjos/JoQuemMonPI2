@@ -1,7 +1,8 @@
-import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CartaComponent } from '../carta/carta.component';
 import { CartaPokemon } from '../carta/carta.model';
+import { UsuarioService } from '../../services/usuario.service';
 import cartasMock from '../../data/cartas-mock.json';
 
 type FaseBatalha = 'ESCOLHER_CARTA' | 'ESCOLHER_ACAO' | 'ANIMANDO_COMBATE' | 'RESULTADO_RODADA' | 'FIM_DE_JOGO';
@@ -14,10 +15,13 @@ type EstadoAnimacao = 'neutro' | 'atacando-j1' | 'atacando-j2' | 'sofrendo-dano'
   imports: [RouterLink, CartaComponent],
   templateUrl: './batalha.component.html',
   styleUrl: './batalha.component.scss',
+  
 })
 export class BatalhaComponent implements OnInit, OnDestroy {
   // Perfis
-  fotoJogador1 = 'images/perfil/treinador_default.jpg';
+  usuarioService = inject(UsuarioService);
+  
+  fotoJogador1 = this.usuarioService.fotoTreinador();
   fotoJogador2 = 'images/perfil/rival_default.jpg';
 
   // Mãos (Signals para atualizar barra de vida e contagem em tempo real)
@@ -63,6 +67,11 @@ export class BatalhaComponent implements OnInit, OnDestroy {
       const lista = [...cartasMock, ...cartasMock].slice(0, 4);
       return lista.map((c) => ({ ...c }));
     };
+
+
+    if (!this.usuarioService.perfil()) {
+      this.usuarioService.carregarPerfil().subscribe();
+    }
 
     this.maoJogador1.set(gerarBaralho());
     this.maoJogador2.set(gerarBaralho());

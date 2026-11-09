@@ -2,6 +2,7 @@ import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { UsuarioService } from '../../services/usuario.service';
 
 export interface PerfilUsuario {
   id: number;
@@ -19,11 +20,15 @@ export interface PerfilUsuario {
   styleUrl: './perfil.component.scss',
 })
 export class PerfilComponent implements OnInit {
+  private usuarioService = inject(UsuarioService);
   private http = inject(HttpClient);
   private fb = inject(FormBuilder);
   private readonly API_URL = 'http://localhost/joquemmon-api/perfil.php';
 
-  readonly usuarioId = 1;
+  get usuarioId(): number {
+    return this.usuarioService.usuarioId;
+  }
+
   readonly FOTO_PADRAO = 'images/perfil/treinador_default.jpg';
 
   // Imagens exatamente como estão na pasta public/images/

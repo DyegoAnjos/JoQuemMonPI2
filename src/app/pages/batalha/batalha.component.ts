@@ -7,7 +7,13 @@ import { Baralho } from '../baralhos/baralho.model';
 import { UsuarioService } from '../../services/usuario.service';
 import cartasMock from '../../data/cartas-mock.json';
 
-type FaseBatalha = 'ESCOLHER_CARTA' | 'ESCOLHER_ACAO' | 'ANIMANDO_COMBATE' | 'RESULTADO_RODADA' | 'FIM_DE_JOGO';
+type FaseBatalha =
+  | 'SELECIONAR_BARALHO'
+  | 'ESCOLHER_CARTA'
+  | 'ESCOLHER_ACAO'
+  | 'ANIMANDO_COMBATE'
+  | 'RESULTADO_RODADA'
+  | 'FIM_DE_JOGO';
 type AtributoAcao = 'atq' | 'def' | 'vel';
 type EstadoAnimacao = 'neutro' | 'atacando-j1' | 'atacando-j2' | 'sofrendo-dano' | 'derrotada' | 'empate';
 
@@ -29,6 +35,11 @@ export class BatalhaComponent implements OnInit, OnDestroy {
   fotoJogador1 = this.usuarioService.fotoTreinador();
   fotoJogador2 = 'images/perfil/rival_default.jpg';
 
+  // Seleção de Baralho antes do duelo
+  carregandoBaralhos = signal<boolean>(true);
+  baralhosDisponiveis = signal<Baralho[]>([]);
+  baralhoSelecionadoId = signal<number | null>(null);
+
   // Mãos (Signals para atualizar barra de vida e contagem em tempo real)
   maoJogador1 = signal<CartaPokemon[]>([]);
   maoJogador2 = signal<CartaPokemon[]>([]);
@@ -43,7 +54,7 @@ export class BatalhaComponent implements OnInit, OnDestroy {
   cartaRivalRevelada = signal<boolean>(false);
 
   // Controle de Turnos e Seleções Pendentes
-  faseAtual = signal<FaseBatalha>('ESCOLHER_CARTA');
+  faseAtual = signal<FaseBatalha>('SELECIONAR_BARALHO');
   indexCartaPreSelecionada = signal<number | null>(null);
   acaoSelecionadaJ1 = signal<AtributoAcao | null>(null);
   acaoSelecionadaJ2 = signal<AtributoAcao | null>(null);
@@ -53,7 +64,7 @@ export class BatalhaComponent implements OnInit, OnDestroy {
   animacaoSlot2 = signal<EstadoAnimacao>('neutro');
 
   // Caixa de descrição
-  logBatalha = signal<string>('Carregando seu baralho para o duelo...');
+  logBatalha = signal<string>('Carregando seus baralhos...');
 
   // Vida total de cada jogador (cartas na mão + carta ativa em campo)
   vidaJogador1 = computed(() => this.maoJogador1().length + (this.cartaCampoJogador1() ? 1 : 0));
@@ -76,72 +87,91 @@ export class BatalhaComponent implements OnInit, OnDestroy {
       this.usuarioService.carregarPerfil().subscribe();
     }
 
-    this.carregarDecksParaBatalha();
+    this.buscarBaralhosDoUsuario();
   }
 
   ngOnDestroy() {
     this.pararTemporizador();
   }
 
-  private carregarDecksParaBatalha() {
+  // =========================================================
+  // FASE 0: BUSCAR E SELECIONAR BARALHO ANTES DO DUELO
+  // =========================================================
+  private buscarBaralhosDoUsuario() {
     const usuarioId = this.usuarioService.usuarioId;
+    this.carregandoBaralhos.set(true);
 
-    // 1. Busca os baralhos reais do jogador no MySQL
     this.http
       .get<Baralho[]>(`${this.API_BARALHOS}?usuario_id=${usuarioId}`)
       .subscribe({
         next: (baralhos) => {
-          const baralhoValido = (baralhos ?? []).find((b) => b.cartas && b.cartas.length > 0);
+          const validos = (baralhos ?? []).filter((b) => b.cartas && b.cartas.length > 0);
+          this.baralhosDisponiveis.set(validos);
+          this.carregandoBaralhos.set(false);
 
-          if (baralhoValido) {
-            const deckJ1 = baralhoValido.cartas.slice(0, 4).map((c) => ({ ...c }));
-            this.maoJogador1.set(deckJ1);
-            this.totalCartasInicialJ1.set(deckJ1.length);
-            this.logBatalha.set(
-              `Baralho "${baralhoValido.nome}" carregado! Selecione uma carta da sua mão e clique em Confirmar.`
-            );
+          if (validos.length > 0) {
+            this.baralhoSelecionadoId.set(validos[0].id);
+            this.logBatalha.set('Escolha o baralho que deseja levar para a arena e clique em "Iniciar Duelo".');
           } else {
-            this.aplicarFallbackDeckJogador();
+            this.logBatalha.set('Você ainda não possui nenhum baralho com cartas montado!');
           }
-
-          this.carregarDeckRival(usuarioId);
         },
         error: () => {
-          this.aplicarFallbackDeckJogador();
-          this.carregarDeckRival(usuarioId);
+          this.carregandoBaralhos.set(false);
+          this.baralhosDisponiveis.set([]);
+          this.logBatalha.set('Não foi possível carregar seus baralhos do servidor.');
         },
       });
   }
 
-  private aplicarFallbackDeckJogador() {
-    const lista = [...cartasMock, ...cartasMock].slice(0, 4).map((c) => ({ ...c }));
-    this.maoJogador1.set(lista);
-    this.totalCartasInicialJ1.set(lista.length);
-    this.logBatalha.set('Fase de Preparação: Selecione uma carta da sua mão e clique em Confirmar.');
+  selecionarBaralho(baralhoId: number) {
+    this.baralhoSelecionadoId.set(baralhoId);
   }
 
-  private carregarDeckRival(usuarioId: number) {
-    // 2. Busca cartas reais do banco para montar a mão do Rival
+  resumoCartasBaralho(baralho: Baralho): string {
+    return baralho.cartas.map((c) => c.nome).join(', ');
+  }
+
+  iniciarDueloComBaralho() {
+    const idEscolhido = this.baralhoSelecionadoId();
+    const baralho = this.baralhosDisponiveis().find((b) => b.id === idEscolhido);
+    if (!baralho || baralho.cartas.length === 0) return;
+
+    const deckJ1 = baralho.cartas.slice(0, 4).map((c) => ({ ...c }));
+    this.maoJogador1.set(deckJ1);
+    this.totalCartasInicialJ1.set(deckJ1.length);
+
+    this.carregarDeckRival(this.usuarioService.usuarioId, deckJ1.length, baralho.nome);
+  }
+
+  private carregarDeckRival(usuarioId: number, quantidadeCartas: number, nomeBaralho: string) {
     this.http
       .get<CartaPokemon[]>(`${this.API_CARTAS}?usuario_id=${usuarioId}`)
       .subscribe({
         next: (cartasBanco) => {
           const base = cartasBanco && cartasBanco.length > 0 ? cartasBanco : cartasMock;
           const pool = [...base, ...base, ...base, ...base];
-          // Embaralha e pega 4 cartas para o Rival
           const embaralhadas = pool
             .sort(() => Math.random() - 0.5)
-            .slice(0, 4)
+            .slice(0, quantidadeCartas)
             .map((c) => ({ ...c }));
 
           this.maoJogador2.set(embaralhadas);
           this.totalCartasInicialJ2.set(embaralhadas.length);
+          this.faseAtual.set('ESCOLHER_CARTA');
+          this.logBatalha.set(
+            `Duelo iniciado com "${nomeBaralho}"! Selecione uma carta da sua mão e clique em Confirmar.`
+          );
           this.reiniciarTemporizador();
         },
         error: () => {
-          const lista = [...cartasMock, ...cartasMock].slice(0, 4).map((c) => ({ ...c }));
+          const lista = [...cartasMock, ...cartasMock].slice(0, quantidadeCartas).map((c) => ({ ...c }));
           this.maoJogador2.set(lista);
           this.totalCartasInicialJ2.set(lista.length);
+          this.faseAtual.set('ESCOLHER_CARTA');
+          this.logBatalha.set(
+            `Duelo iniciado com "${nomeBaralho}"! Selecione uma carta da sua mão e clique em Confirmar.`
+          );
           this.reiniciarTemporizador();
         },
       });
@@ -162,7 +192,7 @@ export class BatalhaComponent implements OnInit, OnDestroy {
     this.tempoRestante.set(this.TEMPO_MAXIMO);
 
     this.intervaloTimer = setInterval(() => {
-      if (this.faseAtual() === 'FIM_DE_JOGO') {
+      if (this.faseAtual() === 'FIM_DE_JOGO' || this.faseAtual() === 'SELECIONAR_BARALHO') {
         this.pararTemporizador();
         return;
       }
@@ -265,7 +295,6 @@ export class BatalhaComponent implements OnInit, OnDestroy {
     this.animacaoSlot1.set('neutro');
     this.animacaoSlot2.set('neutro');
 
-    // Caso de Empate
     if (a1 === a2) {
       this.animacaoSlot1.set('empate');
       this.animacaoSlot2.set('empate');

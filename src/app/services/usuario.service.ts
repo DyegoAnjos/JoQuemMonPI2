@@ -1,13 +1,20 @@
-import { Injectable, signal, computed, inject } from '@angular/core';
+import { Injectable, inject, signal, computed, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { tap } from 'rxjs';
+
 
 export interface PerfilUsuario {
   id: number;
   email: string;
   nome: string;
-  foto: string | null;
+  foto: string;
   xp: number;
+}
+
+interface AuthResponse {
+  mensagem: string;
+  usuario: PerfilUsuario;
 }
 
 @Injectable({
@@ -15,78 +22,86 @@ export interface PerfilUsuario {
 })
 export class UsuarioService {
   private http = inject(HttpClient);
-  private readonly API_URL = 'http://localhost/joquemmon-api/perfil.php';
+  private platformId = inject(PLATFORM_ID);
 
-  readonly usuarioId = 1;
-  readonly FOTO_PADRAO = 'images/perfil/treinador_default.jpg';
+  private readonly API_PERFIL = 'http://localhost/joquemmon-api/perfil.php';
+  private readonly API_AUTH = 'http://localhost/joquemmon-api/auth.php';
+  private readonly STORAGE_KEY = 'joquemmon_usuario_id';
 
-  readonly fotosValidas = [
-    'images/perfil/treinador_default.jpg',
-    'images/perfil/rival_default.jpg',
-    'images/pokemon/pikachu.png',
-    'images/pokemon/charizard.png',
-    'images/pokemon/chandelure.png',
-  ];
-
-  // Estado global reativo do treinador logado
+  private _usuarioId = signal<number>(this.lerIdSalvo());
   perfil = signal<PerfilUsuario | null>(null);
-  carregando = signal<boolean>(false);
 
-  // Atalhos prontos para qualquer componente usar
+  get usuarioId(): number {
+    return this._usuarioId();
+  }
+
+  estaLogado = computed(() => this._usuarioId() > 0);
   nomeTreinador = computed(() => this.perfil()?.nome || 'Treinador');
-  fotoTreinador = computed(() => this.resolverFotoLocal(this.perfil()?.foto));
+  fotoTreinador = computed(() => this.perfil()?.foto || 'images/perfil/treinador_default.jpg');
   xpTreinador = computed(() => this.perfil()?.xp ?? 0);
-  nivelTreinador = computed(() => Math.floor(this.xpTreinador() / 100) + 1);
 
-  resolverFotoLocal(fotoBanco: string | null | undefined): string {
-    const caminho = fotoBanco?.trim() ?? '';
-    return this.fotosValidas.includes(caminho) ? caminho : this.FOTO_PADRAO;
+  private lerIdSalvo(): number {
+    if (isPlatformBrowser(this.platformId)) {
+      const salvo = localStorage.getItem(this.STORAGE_KEY);
+      if (salvo && Number(salvo) > 0) {
+        return Number(salvo);
+      }
+    }
+    return 1; // Mantém fallback para o usuário 1 enquanto você testa
+  }
+
+  private definirSessao(usuario: PerfilUsuario) {
+    this._usuarioId.set(usuario.id);
+    this.perfil.set(usuario);
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.setItem(this.STORAGE_KEY, String(usuario.id));
+    }
+  }
+
+  login(email: string, senha: string) {
+    return this.http
+      .post<AuthResponse>(this.API_AUTH, { acao: 'login', email, senha })
+      .pipe(tap((res) => this.definirSessao(res.usuario)));
+  }
+
+  cadastrar(nome: string, email: string, senha: string) {
+    return this.http
+      .post<AuthResponse>(this.API_AUTH, { acao: 'cadastro', nome, email, senha })
+      .pipe(tap((res) => this.definirSessao(res.usuario)));
+  }
+
+  logout() {
+    this._usuarioId.set(0);
+    this.perfil.set(null);
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.removeItem(this.STORAGE_KEY);
+    }
   }
 
   carregarPerfil() {
-    this.carregando.set(true);
-    return this.http.get<PerfilUsuario>(`${this.API_URL}?id=${this.usuarioId}`).pipe(
-      tap({
-        next: (dados) => {
-          this.perfil.set({
-            ...dados,
-            foto: this.resolverFotoLocal(dados.foto),
-          });
-          this.carregando.set(false);
-        },
-        error: () => {
-          this.carregando.set(false);
-        },
-      })
-    );
+    return this.http
+      .get<PerfilUsuario>(`${this.API_PERFIL}?id=${this.usuarioId}`)
+      .pipe(tap((dados) => this.perfil.set(dados)));
   }
 
   atualizarPerfil(nome: string, foto: string) {
-    const fotoFinal = this.resolverFotoLocal(foto);
     return this.http
-      .put<{ mensagem: string }>(`${this.API_URL}?id=${this.usuarioId}`, {
-        nome: nome.trim(),
-        foto: fotoFinal,
-      })
+      .put<{ mensagem: string }>(`${this.API_PERFIL}?id=${this.usuarioId}`, { nome, foto })
       .pipe(
         tap(() => {
-          this.perfil.update((atual) =>
-            atual ? { ...atual, nome: nome.trim(), foto: fotoFinal } : null
-          );
+          this.perfil.update((atual) => (atual ? { ...atual, nome, foto } : null));
         })
       );
   }
 
   adicionarXp(ganhoXp: number) {
     return this.http
-      .put<{ mensagem: string; xp: number }>(`${this.API_URL}?id=${this.usuarioId}`, {
+      .put<{ mensagem: string; xp: number }>(`${this.API_PERFIL}?id=${this.usuarioId}`, {
         ganho_xp: ganhoXp,
       })
       .pipe(
         tap((res) => {
-          this.perfil.update((atual) =>
-            atual ? { ...atual, xp: res.xp } : null
-          );
+          this.perfil.update((atual) => (atual ? { ...atual, xp: res.xp } : null));
         })
       );
   }

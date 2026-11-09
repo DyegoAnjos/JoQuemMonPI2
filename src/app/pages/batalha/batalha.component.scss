@@ -470,3 +470,93 @@
     transform: translateY(-0.6rem);
   }
 }
+/* =========================================
+   PAINEL DE SELEÇÃO DE BARALHO PRÉ-DUELO
+   ========================================= */
+.painel-selecao-baralho {
+  width: 100%;
+  max-width: 34rem;
+  background-color: #ffffff;
+  border-top: 6px solid #3b4cca;
+  border-radius: 0.85rem;
+  padding: 1.5rem 2rem;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+
+  h2 {
+    margin: 0;
+    color: #2b2b2b;
+    font-size: 1.35rem;
+    font-weight: 800;
+  }
+
+  .mensagem-status {
+    margin: 0;
+    color: #555555;
+    text-align: center;
+    font-size: 0.95rem;
+  }
+}
+
+.lista-baralhos-duelo {
+  width: 100%;
+  max-height: 13rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding-right: 0.25rem;
+}
+
+.card-baralho-opcao {
+  width: 100%;
+  text-align: left;
+  background-color: #f7f9fc;
+  border: 2px solid #d5dce8;
+  border-radius: 0.55rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  transition: border-color 0.2s, background-color 0.2s, transform 0.15s;
+
+  &:hover {
+    border-color: #3b4cca;
+    background-color: #eef2fb;
+  }
+
+  &.ativo {
+    border-color: #3b4cca;
+    background-color: #e6ecff;
+    box-shadow: 0 0 0 2px rgba(59, 76, 202, 0.2);
+  }
+
+  .topo-opcao {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    strong {
+      color: #2b2b2b;
+      font-size: 1rem;
+    }
+
+    span {
+      background-color: #3b4cca;
+      color: #ffffff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.15rem 0.55rem;
+      border-radius: 1rem;
+    }
+  }
+
+  small {
+    color: #555555;
+    font-size: 0.8rem;
+  }
+}

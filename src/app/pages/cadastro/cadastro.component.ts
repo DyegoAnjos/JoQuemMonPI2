@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import {
   ReactiveFormsModule,
   FormBuilder,
@@ -7,6 +7,7 @@ import {
   ValidationErrors,
 } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { UsuarioService } from '../../services/usuario.service';
 
 // Validador customizado para checar se senha e confirmarSenha são idênticas
 function senhasIguaisValidator(control: AbstractControl): ValidationErrors | null {
@@ -28,8 +29,12 @@ function senhasIguaisValidator(control: AbstractControl): ValidationErrors | nul
 export class CadastroComponent {
   private fb = inject(FormBuilder);
   private router = inject(Router);
+  private usuarioService = inject(UsuarioService);
 
   private senhaRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+  carregando = signal<boolean>(false);
+  erroCadastro = signal<string>('');
 
   formularioCadastro = this.fb.group(
     {
@@ -42,14 +47,26 @@ export class CadastroComponent {
   );
 
   cadastrar() {
-    if (this.formularioCadastro.valid) {
-      // Remove confirmarSenha antes de enviar/salvar os dados
-      const { confirmarSenha, ...dadosTreinador } = this.formularioCadastro.value;
-      console.log('Treinador cadastrado:', dadosTreinador);
-
-      this.router.navigate(['/home']);
-    } else {
+    if (this.formularioCadastro.invalid) {
       this.formularioCadastro.markAllAsTouched();
+      return;
     }
+
+    const { nome, email, senha } = this.formularioCadastro.value;
+    if (!nome || !email || !senha) return;
+
+    this.carregando.set(true);
+    this.erroCadastro.set('');
+
+    this.usuarioService.cadastrar(nome, email, senha).subscribe({
+      next: () => {
+        this.carregando.set(false);
+        this.router.navigate(['/home']);
+      },
+      error: (err) => {
+        this.carregando.set(false);
+        this.erroCadastro.set(err.error?.erro || 'Erro ao cadastrar treinador. Tente novamente.');
+      },
+    });
   }
 }

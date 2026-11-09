@@ -7,10 +7,10 @@
       </div>
       <div class="info-vida">
         <span class="nome-treinador">Rival</span>
-        <div class="barra-vida-container" title="Cartas restantes: {{ vidaJogador2() }}/4">
-          <div class="barra-vida-preenchimento" [style.width.%]="(vidaJogador2() / 4) * 100"></div>
+        <div class="barra-vida-container" title="Cartas restantes: {{ vidaJogador2() }}/{{ totalCartasInicialJ2() }}">
+          <div class="barra-vida-preenchimento" [style.width.%]="(vidaJogador2() / totalCartasInicialJ2()) * 100"></div>
         </div>
-        <span class="texto-vida">{{ vidaJogador2() }} / 4 Cartas</span>
+        <span class="texto-vida">{{ vidaJogador2() }} / {{ totalCartasInicialJ2() }} Cartas</span>
       </div>
     </div>
 
@@ -34,80 +34,119 @@
 
   <!-- CAMPO 2 (CENTRO): CAMPO DE BATALHA -->
   <main class="campo-batalha">
-    <div class="duelo-slots">
-      <!-- Slot da Carta do Jogador 1 -->
-      <div class="slot-carta" [class]="animacaoSlot1()">
-        @if (cartaCampoJogador1(); as cartaJ1) {
-          <app-carta
-            [carta]="cartaJ1"
-            [interativo]="faseAtual() === 'ESCOLHER_ACAO'"
-            (atributoSelecionado)="aoEscolherAtributo($event)">
-          </app-carta>
-        } @else if (indexCartaPreSelecionada() !== null) {
-          <div class="carta-pre-selecionada">
-            <app-carta [carta]="maoJogador1()[indexCartaPreSelecionada()!]" [interativo]="false"></app-carta>
-          </div>
+    @if (faseAtual() === 'SELECIONAR_BARALHO') {
+      <div class="painel-selecao-baralho">
+        <h2>Selecione seu Baralho</h2>
+
+        @if (carregandoBaralhos()) {
+          <p class="mensagem-status">Buscando seus baralhos...</p>
+        } @else if (baralhosDisponiveis().length === 0) {
+          <p class="mensagem-status">Você precisa montar pelo menos um baralho antes de entrar em batalha.</p>
+          <button routerLink="/baralhos" class="btn-confirmar">
+            Montar Baralho
+          </button>
         } @else {
-          <div class="slot-vazio">Sua Carta</div>
-        }
-      </div>
+          <div class="lista-baralhos-duelo">
+            @for (baralho of baralhosDisponiveis(); track baralho.id) {
+              <button
+                type="button"
+                class="card-baralho-opcao"
+                [class.ativo]="baralhoSelecionadoId() === baralho.id"
+                (click)="selecionarBaralho(baralho.id)">
+                <div class="topo-opcao">
+                  <strong>{{ baralho.nome }}</strong>
+                  <span>{{ baralho.cartas.length }} carta(s)</span>
+                </div>
+                <small>{{ resumoCartasBaralho(baralho) }}</small>
+              </button>
+            }
+          </div>
 
-      <!-- Centro: Badge VS e Botão de Confirmar Turno -->
-      <div class="centro-acoes">
-        <div class="vs-badge">VS</div>
-
-        @if (faseAtual() === 'ESCOLHER_CARTA') {
           <button
             type="button"
             class="btn-confirmar"
-            [disabled]="indexCartaPreSelecionada() === null"
-            (click)="confirmarEscolhaCarta()">
-            Confirmar Carta
-          </button>
-        }
-
-        @if (faseAtual() === 'ESCOLHER_ACAO') {
-          <div class="indicador-escolha">
-            Ação: <strong>{{ acaoSelecionadaJ1() ? acaoSelecionadaJ1()!.toUpperCase() : 'Nenhuma' }}</strong>
-          </div>
-          <button
-            type="button"
-            class="btn-confirmar"
-            [disabled]="!acaoSelecionadaJ1()"
-            (click)="confirmarEscolhaAcao()">
-            Confirmar Ação
-          </button>
-        }
-
-        @if (faseAtual() === 'RESULTADO_RODADA') {
-          <button
-            type="button"
-            class="btn-confirmar btn-continuar"
-            (click)="avancarAposRodada()">
-            Continuar
-          </button>
-        }
-
-        @if (faseAtual() === 'FIM_DE_JOGO') {
-          <button routerLink="/home" class="btn-confirmar btn-sair">
-            Voltar ao Menu
+            [disabled]="!baralhoSelecionadoId()"
+            (click)="iniciarDueloComBaralho()">
+            Iniciar Duelo
           </button>
         }
       </div>
+    } @else {
+      <div class="duelo-slots">
+        <!-- Slot da Carta do Jogador 1 -->
+        <div class="slot-carta" [class]="animacaoSlot1()">
+          @if (cartaCampoJogador1(); as cartaJ1) {
+            <app-carta
+              [carta]="cartaJ1"
+              [interativo]="faseAtual() === 'ESCOLHER_ACAO'"
+              (atributoSelecionado)="aoEscolherAtributo($event)">
+            </app-carta>
+          } @else if (indexCartaPreSelecionada() !== null) {
+            <div class="carta-pre-selecionada">
+              <app-carta [carta]="maoJogador1()[indexCartaPreSelecionada()!]" [interativo]="false"></app-carta>
+            </div>
+          } @else {
+            <div class="slot-vazio">Sua Carta</div>
+          }
+        </div>
 
-      <!-- Slot da Carta do Jogador 2 -->
-      <div class="slot-carta" [class]="animacaoSlot2()">
-        @if (cartaCampoJogador2() && cartaRivalRevelada()) {
-          <app-carta [carta]="cartaCampoJogador2()!" [interativo]="false"></app-carta>
-        } @else if (cartaCampoJogador2() && !cartaRivalRevelada()) {
-          <div class="carta-verso-grande">
-            <span>JoQuemMon</span>
-          </div>
-        } @else {
-          <div class="slot-vazio">Carta Rival</div>
-        }
+        <!-- Centro: Badge VS e Botão de Confirmar Turno -->
+        <div class="centro-acoes">
+          <div class="vs-badge">VS</div>
+
+          @if (faseAtual() === 'ESCOLHER_CARTA') {
+            <button
+              type="button"
+              class="btn-confirmar"
+              [disabled]="indexCartaPreSelecionada() === null"
+              (click)="confirmarEscolhaCarta()">
+              Confirmar Carta
+            </button>
+          }
+
+          @if (faseAtual() === 'ESCOLHER_ACAO') {
+            <div class="indicador-escolha">
+              Ação: <strong>{{ acaoSelecionadaJ1() ? acaoSelecionadaJ1()!.toUpperCase() : 'Nenhuma' }}</strong>
+            </div>
+            <button
+              type="button"
+              class="btn-confirmar"
+              [disabled]="!acaoSelecionadaJ1()"
+              (click)="confirmarEscolhaAcao()">
+              Confirmar Ação
+            </button>
+          }
+
+          @if (faseAtual() === 'RESULTADO_RODADA') {
+            <button
+              type="button"
+              class="btn-confirmar btn-continuar"
+              (click)="avancarAposRodada()">
+              Continuar
+            </button>
+          }
+
+          @if (faseAtual() === 'FIM_DE_JOGO') {
+            <button routerLink="/home" class="btn-confirmar btn-sair">
+              Voltar ao Menu
+            </button>
+          }
+        </div>
+
+        <!-- Slot da Carta do Jogador 2 -->
+        <div class="slot-carta" [class]="animacaoSlot2()">
+          @if (cartaCampoJogador2() && cartaRivalRevelada()) {
+            <app-carta [carta]="cartaCampoJogador2()!" [interativo]="false"></app-carta>
+          } @else if (cartaCampoJogador2() && !cartaRivalRevelada()) {
+            <div class="carta-verso-grande">
+              <span>JoQuemMon</span>
+            </div>
+          } @else {
+            <div class="slot-vazio">Carta Rival</div>
+          }
+        </div>
       </div>
-    </div>
+    }
 
     <!-- Caixa de Descrição dos Acontecimentos -->
     <div class="caixa-descricao">
@@ -134,10 +173,10 @@
     <div class="perfil-status perfil-direita">
       <div class="info-vida alinhar-direita">
         <span class="nome-treinador">Você</span>
-        <div class="barra-vida-container" title="Cartas restantes: {{ vidaJogador1() }}/4">
-          <div class="barra-vida-preenchimento" [style.width.%]="(vidaJogador1() / 4) * 100"></div>
+        <div class="barra-vida-container" title="Cartas restantes: {{ vidaJogador1() }}/{{ totalCartasInicialJ1() }}">
+          <div class="barra-vida-preenchimento" [style.width.%]="(vidaJogador1() / totalCartasInicialJ1()) * 100"></div>
         </div>
-        <span class="texto-vida">{{ vidaJogador1() }} / 4 Cartas</span>
+        <span class="texto-vida">{{ vidaJogador1() }} / {{ totalCartasInicialJ1() }} Cartas</span>
       </div>
       <div class="avatar avatar-usuario">
         <img [src]="usuarioService.fotoTreinador()" [alt]="usuarioService.nomeTreinador()">

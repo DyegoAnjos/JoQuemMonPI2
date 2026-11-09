@@ -56,7 +56,13 @@
       }
     </div>
 
-    <button type="submit">Criar Conta</button>
+    @if (erroCadastro()) {
+      <span class="erro">{{ erroCadastro() }}</span>
+    }
+
+    <button type="submit" [disabled]="carregando()">
+      {{ carregando() ? 'Criando Conta...' : 'Criar Conta' }}
+    </button>
 
     <a routerLink="/login" class="link-login">Já tem conta? Faça login</a>
   </form>

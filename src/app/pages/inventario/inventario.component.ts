@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { CartaComponent } from '../carta/carta.component';
 import { CartaPokemon } from '../carta/carta.model';
+import { UsuarioService } from '../../services/usuario.service';
 
 @Component({
   selector: 'app-inventario',
@@ -12,11 +13,14 @@ import { CartaPokemon } from '../carta/carta.model';
   styleUrl: './inventario.component.scss',
 })
 export class InventarioComponent implements OnInit {
+  private usuarioService = inject(UsuarioService);
   private http = inject(HttpClient);
   private readonly API_URL = 'http://localhost/joquemmon-api/cartas.php';
 
   // ID do usuário logado (será substituído pela sessão de login futuramente)
-  readonly usuarioId = 1;
+  get usuarioId(): number {
+    return this.usuarioService.usuarioId;
+  }
 
   // Estados reativos do Inventário
   minhasCartas = signal<CartaPokemon[]>([]);

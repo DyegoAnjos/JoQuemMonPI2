@@ -29,8 +29,14 @@
         </span>
       }
     </div>
+
+    @if (erroLogin()) {
+      <span class="erro">{{ erroLogin() }}</span>
+    }
     
-    <button type="submit">Entrar</button>
+    <button type="submit" [disabled]="carregando()">
+      {{ carregando() ? 'Entrando...' : 'Entrar' }}
+    </button>
     
     <a routerLink="/cadastro" class="link-cadastro">Não tem conta? Cadastre-se</a>
   </form>

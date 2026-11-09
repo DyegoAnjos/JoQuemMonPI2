@@ -1,23 +1,36 @@
-<div class="inventario-container">
-  
-  <header class="header-inventario">
-    <button routerLink="/home" class="btn-nav btn-voltar">
-      ← Voltar
-    </button>
-
+﻿<div class="inventario-page">
+  <!-- HEADER DO INVENTÁRIO -->
+  <header class="topo-inventario">
+    <button routerLink="/home" class="btn-voltar">← Voltar ao Menu</button>
     <h1>Meu Inventário</h1>
-
-    <button routerLink="/baralhos" class="btn-nav btn-baralhos">
-      Baralhos
-    </button>
+    <div class="acoes-topo">
+      <button routerLink="/baralhos" class="btn-ver-baralhos">Meus Baralhos</button>
+    </div>
   </header>
 
-  
-  <main class="box-cartas">
-    <div class="grid-cartas">
-      @for (item of minhasCartas; track $index) {
-        <app-carta [carta]="item" [interativo]="true"></app-carta>
-      }
-    </div>
+  <!-- GRADE DE CARTAS DO INVENTÁRIO -->
+  <main class="conteudo-inventario">
+    @if (carregando()) {
+      <div class="estado-feedback">
+        <p>Carregando suas cartas do banco de dados...</p>
+      </div>
+    } @else if (erroCarregamento()) {
+      <div class="estado-feedback erro">
+        <p>{{ erroCarregamento() }}</p>
+        <button type="button" class="btn-tentar-novamente" (click)="carregarInventario()">
+          Tentar novamente
+        </button>
+      </div>
+    } @else if (minhasCartas().length === 0) {
+      <div class="estado-feedback">
+        <p>Você ainda não possui cartas no seu inventário.</p>
+      </div>
+    } @else {
+      <div class="grid-cartas">
+        @for (carta of minhasCartas(); track carta.id) {
+          <app-carta [carta]="carta" [interativo]="false"></app-carta>
+        }
+      </div>
+    }
   </main>
 </div>

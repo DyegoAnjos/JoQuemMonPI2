@@ -1,0 +1,63 @@
+<div class="cadastro-container">
+  <form class="cadastro-card" [formGroup]="formularioCadastro" (ngSubmit)="cadastrar()">
+    <h2>Novo Treinador</h2>
+
+    <div class="campo">
+      <label for="nome">Nome de Treinador</label>
+      <input
+        type="text"
+        id="nome"
+        formControlName="nome"
+        placeholder="Ex: Ash Ketchum">
+
+      @if (formularioCadastro.get('nome')?.invalid && formularioCadastro.get('nome')?.touched) {
+        <span class="erro">O nome precisa ter pelo menos 3 caracteres.</span>
+      }
+    </div>
+
+    <div class="campo">
+      <label for="email">Email</label>
+      <input
+        type="email"
+        id="email"
+        formControlName="email"
+        placeholder="treinador@pokemon.com">
+
+      @if (formularioCadastro.get('email')?.invalid && formularioCadastro.get('email')?.touched) {
+        <span class="erro">Digite um e-mail válido.</span>
+      }
+    </div>
+
+    <div class="campo">
+      <label for="senha">Senha</label>
+      <input
+        type="password"
+        id="senha"
+        formControlName="senha"
+        placeholder="••••••••">
+
+      @if (formularioCadastro.get('senha')?.invalid && formularioCadastro.get('senha')?.touched) {
+        <span class="erro">
+          Mínimo 8 caracteres, com maiúscula, minúscula, número e símbolo (@$!%*?&).
+        </span>
+      }
+    </div>
+
+    <div class="campo">
+      <label for="confirmarSenha">Confirmar Senha</label>
+      <input
+        type="password"
+        id="confirmarSenha"
+        formControlName="confirmarSenha"
+        placeholder="••••••••">
+
+      @if (formularioCadastro.hasError('senhasDiferentes') && formularioCadastro.get('confirmarSenha')?.touched) {
+        <span class="erro">As senhas não coincidem.</span>
+      }
+    </div>
+
+    <button type="submit">Criar Conta</button>
+
+    <a routerLink="/login" class="link-login">Já tem conta? Faça login</a>
+  </form>
+</div>

@@ -1,0 +1,37 @@
+<div class="login-container">
+  <form class="login-card" [formGroup]="formullarioLogin" (ngSubmit)="logar()">
+    <h2>Acesso do Treinador</h2>
+
+    <div class="campo">
+      <label for="email">Email</label>
+      <input 
+        type="email" 
+        id="email" 
+        formControlName="email" 
+        placeholder="treinador@pokemon.com">
+
+      @if (formullarioLogin.get('email')?.invalid && formullarioLogin.get('email')?.touched) {
+        <span class="erro">Digite um e-mail válido.</span>
+      }
+    </div>
+
+    <div class="campo">
+      <label for="senha">Senha</label>
+      <input 
+        type="password" 
+        id="senha" 
+        formControlName="senha" 
+        placeholder="••••••••">
+
+      @if (formullarioLogin.get('senha')?.invalid && formullarioLogin.get('senha')?.touched) {
+        <span class="erro">
+          Mínimo 8 caracteres, com maiúscula, minúscula, número e símbolo (@$!%*?&).
+        </span>
+      }
+    </div>
+    
+    <button type="submit">Entrar</button>
+    
+    <a routerLink="/cadastro" class="link-cadastro">Não tem conta? Cadastre-se</a>
+  </form>
+</div>

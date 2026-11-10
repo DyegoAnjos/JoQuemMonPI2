@@ -11,6 +11,10 @@
   * [`backend/cartas.php`](../../backend/cartas.php)
   * [`backend/config.php`](../../backend/config.php)
   * [`src/app/pages/inventario/inventario.component.ts`](../../src/app/pages/inventario/inventario.component.ts)
+* **Arquivos com o código fonte de medição do SLA:**
+  * [`tests/sla/teste_cartas.js`](../../tests/sla/teste_cartas.js)
+  * [`tests/sla/gerar_graficos.py`](../../tests/sla/gerar_graficos.py)
+* **Data da medição:** 09/11/2026
 * **Descrição das configurações:** Ambiente local em sistema Windows, executando servidor Apache 2.4 + PHP 8.2 (via XAMPP) e banco de dados relacional MySQL (InnoDB) na mesma máquina (`localhost`). Testes conduzidos com Grafana k6.
 
 ### Testes de Carga (SLA)
@@ -32,6 +36,10 @@
   * [`backend/auth.php`](../../backend/auth.php)
   * [`backend/config.php`](../../backend/config.php)
   * [`src/app/pages/cadastro/cadastro.component.ts`](../../src/app/pages/cadastro/cadastro.component.ts)
+* **Arquivos com o código fonte de medição do SLA:**
+  * [`tests/sla/teste_cadastro.js`](../../tests/sla/teste_cadastro.js)
+  * [`tests/sla/gerar_graficos.py`](../../tests/sla/gerar_graficos.py)
+* **Data da medição:** 09/11/2026
 * **Descrição das configurações:** Mesmo ambiente local Apache/PHP/MySQL em `localhost` com transações ACID isoladas via InnoDB.
 
 ### Testes de Carga (SLA)
@@ -42,5 +50,6 @@
 ![Métricas do Serviço 2](./grafico_cadastro.png)
 
 ### Levantamento de Hipóteses de Gargalos
-1. **Processamento Intensivo de CPU (`password_hash` / Bcrypt):** O algoritmo de hash de senha consome muitos ciclos de processador para garantir segurança, elevando a latência basal e limitando a vazão máxima de requisições por segundo.
-2. **Varredura Randômica no Banco (`ORDER BY RAND()`):** A seleção aleatória das cartas do baralho na batalha acaba atrasando um pouco a resposta.
+1. **Processamento Intensivo de CPU (`password_hash` / Bcrypt):** O algoritmo de hash de senha consome ciclos expressivos de processador para garantir segurança, elevando a latência basal e limitando a vazão máxima de requisições por segundo.
+2. **Varredura Randômica no Banco (`ORDER BY RAND()`):** A seleção aleatória das 4 cartas iniciais para o novo treinador obriga o banco a realizar operações custosas de ordenação em tempo de execução.
+3. **Bloqueio de Escrita Transacional (Locks):** A abertura de transação PDO (`beginTransaction()`) e os múltiplos `INSERT`s na tabela associativa `Carta_Usuario` geram contenção de recursos no motor InnoDB do MySQL sob concorrência de escrita.

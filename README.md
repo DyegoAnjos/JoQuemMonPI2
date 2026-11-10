@@ -1,6 +1,16 @@
 # JoQuemMonPI2
 
+# JoQuemMonPI2
+
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.1.8.
+
+## 📊 Medições de SLA e Testes de Carga
+
+As medições de desempenho, análise de latência, vazão e concorrência (conduzidas com Grafana k6 e Python) para os serviços de leitura (`GET /cartas.php`) e escrita transacional (`POST /auth.php`) estão detalhadas no relatório do repositório:
+
+* **[Acessar Relatório de SLA e Testes de Carga](./docs/sla/README.md)**
+
+---
 
 ## Development server
 

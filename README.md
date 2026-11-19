@@ -1,69 +1,66 @@
-# JoQuemMonPI2
+## MEDIÇÕES DO SLA
 
-# JoQuemMonPI2
+### Serviço 1: Consulta de Cartas (`GET /cartas.php`)
+* **Tipo de operações:** Leitura
+* **Arquivos envolvidos:**
+  * [`backend/cartas.php`](./backend/cartas.php)
+  * [`backend/config.php`](./backend/config.php)
+* **Arquivos com o código fonte de medição do SLA:**
+  * [`testes/sla/teste_cartas.js`](./testes/sla/teste_cartas.js) *(ajustar nome se corresponder a outro arquivo na pasta)*
+  * [`testes/sla/gerar_graficos_evolutivos.py`](./testes/sla/gerar_graficos_evolutivos.py)
+* **Descrição das configurações:** Ambiente local em máquina Windows com Apache, PHP e MySQL em `localhost`, testes de carga com Grafana k6 e geração de gráficos com Python (`pandas` e `matplotlib`).
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.1.8.
+#### MEDIÇÃO 1
+* **Data da medição:** `[DD/MM/AAAA]`
+* **Testes de carga (SLA):**
+  * **Latência:** `[Preencher valor medido do Serviço 1]`
+  * **Vazão:** `[Preencher req/s medido do Serviço 1]`
+  * **Concorrência (limite de requisições simultâneas):** `[Preencher VUs / limite medido]`
+* **Potenciais gargalos do sistema:** `[Preencher gargalos observados no Serviço 1]`
 
-## 📊 Medições de SLA e Testes de Carga
+#### MEDIÇÃO 2
+* **Data da medição:** `[DD/MM/AAAA]`
+* **Testes de carga (SLA):**
+  * **Latência:** `[Preencher se houver 2ª medição do Serviço 1]`
+  * **Vazão:** `[Preencher se houver 2ª medição do Serviço 1]`
+  * **Concorrência (limite de requisições simultâneas):** `[Preencher se houver 2ª medição do Serviço 1]`
 
-As medições de desempenho, análise de latência, vazão e concorrência (conduzidas com Grafana k6 e Python) para os serviços de leitura (`GET /cartas.php`) e escrita transacional (`POST /auth.php`) estão detalhadas no relatório do repositório:
+#### GRÁFICOS comparativos das medições feitas
+* `[Inserir caminho do gráfico comparativo do Serviço 1, se houver]`
 
-* **[Acessar Relatório de SLA e Testes de Carga](./docs/sla/README.md)**
+#### Melhorias/otimizações
+* `[Listar arquivos modificados no Serviço 1, se houver]`
 
 ---
 
-## Development server
+### Serviço 2: Cadastro de Usuário e Sorteio Inicial de Cartas (`POST /auth.php`)
+* **Tipo de operações:** Leitura e inserção (transacional)
+* **Arquivos envolvidos:**
+  * [`backend/auth.php`](./backend/auth.php)
+  * [`backend/config.php`](./backend/config.php)
+* **Arquivos com o código fonte de medição do SLA:**
+  * [`testes/sla/teste_cadastro.js`](./testes/sla/teste_cadastro.js)
+  * [`testes/sla/gerar_graficos_evolutivos.py`](./testes/sla/gerar_graficos_evolutivos.py)
+* **Descrição das configurações:** Ambiente local em máquina Windows com Apache, PHP e MySQL em `localhost`, carga executada via Grafana k6 (`resultado_cadastro_antes.json` e `resultado_cadastro_depois.json`) e gráficos gerados em Python.
 
-To start a local development server, run:
+#### MEDIÇÃO 1
+* **Data da medição:** `[DD/MM/AAAA]`
+* **Testes de carga (SLA):**
+  * **Latência:** Média de **157,63 ms**
+  * **Vazão:** Média de **42,47 req/s**
+  * **Concorrência (limite de requisições simultâneas):** `[Preencher VUs / limite medido]`
+* **Potenciais gargalos do sistema:** Uso de `ORDER BY RAND() LIMIT 4` na consulta das cartas iniciais no MySQL (ordenação aleatória com custo extra de CPU/processamento no banco), além do custo de `password_hash()` e gravações na transação do cadastro.
 
-```bash
-ng serve
-```
+#### MEDIÇÃO 2
+* **Data da medição:** `[DD/MM/AAAA]`
+* **Testes de carga (SLA):**
+  * **Latência:** Média de **152,66 ms** (redução de **4,97 ms** / **-3,15%** em relação à Medição 1)
+  * **Vazão:** Média de **42,45 req/s** (variação de **-0,02 req/s** / **-0,05%** em relação à Medição 1)
+  * **Concorrência (limite de requisições simultâneas):** `[Preencher VUs / limite medido]`
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+#### GRÁFICOS comparativos das medições feitas
+![Gráfico Evolutivo — Cadastro Antes vs. Depois](./docs/sla/grafico_evolutivo_cadastro.png)
 
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+#### Melhorias/otimizações
+* [`backend/auth.php`](./backend/auth.php) — Substituição do `ORDER BY RAND() LIMIT 4` pela busca dos IDs disponíveis (`SELECT PK_id_Carta FROM Carta`), embaralhamento em memória no PHP com `shuffle()`, seleção de até 4 IDs e consulta direta com `IN (...)` antes de inserir em `Carta_Usuario`.
+* [`testes/sla/gerar_graficos_evolutivos.py`](./testes/sla/gerar_graficos_evolutivos.py) — Script criado para comparar as métricas das medições antes e depois da otimização e gerar o gráfico evolutivo.

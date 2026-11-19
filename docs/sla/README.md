@@ -59,8 +59,8 @@
   * **Concorrência (limite de requisições simultâneas):** `[Preencher VUs / limite medido]`
 
 #### GRÁFICOS comparativos das medições feitas
-![Gráfico Evolutivo — Cadastro Antes vs. Depois](./docs/sla/grafico_evolutivo_cadastro.png)
+![Gráfico Evolutivo — Cadastro Antes vs. Depois](grafico_evolutivo_cadastro.png)
 
 #### Melhorias/otimizações
 * [`backend/auth.php`](./backend/auth.php) — Substituição do `ORDER BY RAND() LIMIT 4` pela busca dos IDs disponíveis (`SELECT PK_id_Carta FROM Carta`), embaralhamento em memória no PHP com `shuffle()`, seleção de até 4 IDs e consulta direta com `IN (...)` antes de inserir em `Carta_Usuario`.
-* [`testes/sla/gerar_graficos_evolutivos.py`](./testes/sla/gerar_graficos_evolutivos.py) — Script criado para comparar as métricas das medições antes e depois da otimização e gerar o gráfico evolutivo.
+* [`testes/sla/gerar_graficos_evolutivos.py`](../../testes/sla/gerar_graficos_evolutivos.py) — Script criado para comparar as métricas das medições antes e depois da otimização e gerar o gráfico evolutivo.

@@ -1,55 +1,66 @@
-# RELATÓRIO DE SLA E TESTES DE CARGA — JoQuemMon
+## MEDIÇÕES DO SLA
 
-## Visão Comparativa Geral
-![Comparativo entre Serviços](./grafico_comparativo.png)
+### Serviço 1: Consulta de Cartas (`GET /cartas.php`)
+* **Tipo de operações:** Leitura
+* **Arquivos envolvidos:**
+  * [`backend/cartas.php`](./backend/cartas.php)
+  * [`backend/config.php`](./backend/config.php)
+* **Arquivos com o código fonte de medição do SLA:**
+  * [`testes/sla/teste_cartas.js`](./testes/sla/teste_cartas.js) *(ajustar nome se corresponder a outro arquivo na pasta)*
+  * [`testes/sla/gerar_graficos_evolutivos.py`](./testes/sla/gerar_graficos_evolutivos.py)
+* **Descrição das configurações:** Ambiente local em máquina Windows com Apache, PHP e MySQL em `localhost`, testes de carga com Grafana k6 e geração de gráficos com Python (`pandas` e `matplotlib`).
+
+#### MEDIÇÃO 1
+* **Data da medição:** `[09/11/2026]`
+* **Testes de carga (SLA):**
+  * **Latência:** `[Preencher valor medido do Serviço 1]`
+  * **Vazão:** `[Preencher req/s medido do Serviço 1]`
+  * **Concorrência (limite de requisições simultâneas):** `[Preencher VUs / limite medido]`
+* **Potenciais gargalos do sistema:** `[Preencher gargalos observados no Serviço 1]`
+
+#### MEDIÇÃO 2
+* **Data da medição:** `[18/11/2026]`
+* **Testes de carga (SLA):**
+  * **Latência:** `[Preencher se houver 2ª medição do Serviço 1]`
+  * **Vazão:** `[Preencher se houver 2ª medição do Serviço 1]`
+  * **Concorrência (limite de requisições simultâneas):** `[Preencher se houver 2ª medição do Serviço 1]`
+
+#### GRÁFICOS comparativos das medições feitas
+* `[Inserir caminho do gráfico comparativo do Serviço 1, se houver]`
+
+#### Melhorias/otimizações
+* `[Listar arquivos modificados no Serviço 1, se houver]`
 
 ---
 
-## 1. Serviço 1: Listagem de Cartas do Inventário (`GET /cartas.php`)
-* **Tipo de operações:** Leitura (`SELECT`)
+### Serviço 2: Cadastro de Usuário e Sorteio Inicial de Cartas (`POST /auth.php`)
+* **Tipo de operações:** Leitura e inserção (transacional)
 * **Arquivos envolvidos:**
-  * [`backend/cartas.php`](../../backend/cartas.php)
-  * [`backend/config.php`](../../backend/config.php)
-  * [`src/app/pages/inventario/inventario.component.ts`](../../src/app/pages/inventario/inventario.component.ts)
+  * [`backend/auth.php`](./backend/auth.php)
+  * [`backend/config.php`](./backend/config.php)
 * **Arquivos com o código fonte de medição do SLA:**
-  * [`tests/sla/teste_cartas.js`](../../tests/sla/teste_cartas.js)
-  * [`tests/sla/gerar_graficos.py`](../../tests/sla/gerar_graficos.py)
-* **Data da medição:** 09/11/2026
-* **Descrição das configurações:** Ambiente local em sistema Windows, executando servidor Apache 2.4 + PHP 8.2 (via XAMPP) e banco de dados relacional MySQL (InnoDB) na mesma máquina (`localhost`). Testes conduzidos com Grafana k6.
+  * [`testes/sla/teste_cadastro.js`](./testes/sla/teste_cadastro.js)
+  * [`testes/sla/gerar_graficos_evolutivos.py`](./testes/sla/gerar_graficos_evolutivos.py)
+* **Descrição das configurações:** Ambiente local em máquina Windows com Apache, PHP e MySQL em `localhost`, carga executada via Grafana k6 (`resultado_cadastro_antes.json` e `resultado_cadastro_depois.json`) e gráficos gerados em Python.
 
-### Testes de Carga (SLA)
-* **Latência Média Geral:** ~41.5 ms (Pico máximo de ~128 ms sob 100 VUs).
-* **Vazão Média:** ~152 req/s (Pico máximo de ~304 req/s).
-* **Concorrência Máxima:** Escalonamento gradual de 3 até 100 usuários virtuais simultâneos (VUs).
+#### MEDIÇÃO 1
+* **Data da medição:** `[09/11/2026]`
+* **Testes de carga (SLA):**
+  * **Latência:** Média de **157,63 ms**
+  * **Vazão:** Média de **42,47 req/s**
+  * **Concorrência (limite de requisições simultâneas):** `[Preencher VUs / limite medido]`
+* **Potenciais gargalos do sistema:** Uso de `ORDER BY RAND() LIMIT 4` na consulta das cartas iniciais no MySQL (ordenação aleatória com custo extra de CPU/processamento no banco), além do custo de `password_hash()` e gravações na transação do cadastro.
 
-![Métricas do Serviço 1](./grafico_cartas.png)
+#### MEDIÇÃO 2
+* **Data da medição:** `[18/11/2026]`
+* **Testes de carga (SLA):**
+  * **Latência:** Média de **152,66 ms** (redução de **4,97 ms** / **-3,15%** em relação à Medição 1)
+  * **Vazão:** Média de **42,45 req/s** (variação de **-0,02 req/s** / **-0,05%** em relação à Medição 1)
+  * **Concorrência (limite de requisições simultâneas):** `[Preencher VUs / limite medido]`
 
-### Levantamento de Hipóteses de Gargalos
-1. **Custo de Junção (Joins) em Massa:** A query executa múltiplos `JOIN`s entre `Carta`, `Carta_Usuario`, `Carta_Tipo` e `Tipo`, utilizando `GROUP_CONCAT` e `GROUP BY`. Sob 100 VUs simultâneas, o tempo de resposta cresce linearmente devido ao esforço de ordenação do MySQL.
-2. **Conexões Simultâneas no Apache:** A ausência de persistência de conexão (*connection pooling*) força a abertura e fechamento constante de sockets TCP e instâncias PDO.
+#### GRÁFICOS comparativos das medições feitas
+![Gráfico Evolutivo — Cadastro Antes vs. Depois](./docs/sla/grafico_evolutivo_cadastro.png)
 
----
-
-## 2. Serviço 2: Cadastro de Treinador com Sorteio (`POST /auth.php`)
-* **Tipo de operações:** Leitura e Inserção (`SELECT` + `INSERT` transacional)
-* **Arquivos envolvidos:**
-  * [`backend/auth.php`](../../backend/auth.php)
-  * [`backend/config.php`](../../backend/config.php)
-  * [`src/app/pages/cadastro/cadastro.component.ts`](../../src/app/pages/cadastro/cadastro.component.ts)
-* **Arquivos com o código fonte de medição do SLA:**
-  * [`tests/sla/teste_cadastro.js`](../../tests/sla/teste_cadastro.js)
-  * [`tests/sla/gerar_graficos.py`](../../tests/sla/gerar_graficos.py)
-* **Data da medição:** 09/11/2026
-* **Descrição das configurações:** Mesmo ambiente local Apache/PHP/MySQL em `localhost` com transações ACID isoladas via InnoDB.
-
-### Testes de Carga (SLA)
-* **Latência Média Geral:** ~192 ms (Pico crítico de ~345 ms sob carga máxima de 50 VUs).
-* **Vazão Média:** ~42 req/s (Teto estabilizado em ~78 req/s).
-* **Concorrência Máxima:** Ramp-up controlado de 2 até 50 usuários virtuais simultâneos (VUs).
-
-![Métricas do Serviço 2](./grafico_cadastro.png)
-
-### Levantamento de Hipóteses de Gargalos
-1. **Processamento Intensivo de CPU (`password_hash` / Bcrypt):** O algoritmo de hash de senha consome ciclos expressivos de processador para garantir segurança, elevando a latência basal e limitando a vazão máxima de requisições por segundo.
-2. **Varredura Randômica no Banco (`ORDER BY RAND()`):** A seleção aleatória das 4 cartas iniciais para o novo treinador obriga o banco a realizar operações custosas de ordenação em tempo de execução.
-3. **Bloqueio de Escrita Transacional (Locks):** A abertura de transação PDO (`beginTransaction()`) e os múltiplos `INSERT`s na tabela associativa `Carta_Usuario` geram contenção de recursos no motor InnoDB do MySQL sob concorrência de escrita.
+#### Melhorias/otimizações
+* [`backend/auth.php`](./backend/auth.php) — Substituição do `ORDER BY RAND() LIMIT 4` pela busca dos IDs disponíveis (`SELECT PK_id_Carta FROM Carta`), embaralhamento em memória no PHP com `shuffle()`, seleção de até 4 IDs e consulta direta com `IN (...)` antes de inserir em `Carta_Usuario`.
+* [`testes/sla/gerar_graficos_evolutivos.py`](./testes/sla/gerar_graficos_evolutivos.py) — Script criado para comparar as métricas das medições antes e depois da otimização e gerar o gráfico evolutivo.
